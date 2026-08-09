@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 import { getAccounts } from './api/tinkoff/getAccounts/getAccounts.js';
 import { getTinkoffAccountsController } from './controllers/getTinkoffAccountsController.js';
 import cors from 'cors';
-import { getShareByUid } from './api/tinkoff/getSharesByUid/getShareByUid.js';
 import { getSharesController } from './controllers/getSharesController.js';
 import { getPortfolio } from './api/tinkoff/getPortfolio/getPortfolio.js';
 import { formatStockData } from './utils/formatStockData.js';
