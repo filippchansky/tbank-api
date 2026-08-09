@@ -11,12 +11,23 @@ import { formatPortfolio } from './utils/formatPortfolio.js';
 
 dotenv.config({ path: '.env.local' });
 
-const PORT = 5050;
+const PORT = process.env.PORT || 5050;
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
+
+// Health-check + быстрая удалённая диагностика окружения. Значение TINKOFF_URL
+// НЕ раскрываем — только факт, задана ли переменная (на Vercel её легко забыть,
+// т.к. локально она живёт в gitignore-нутом .env.local).
+app.get('/', (req, res) => {
+    res.json({
+        status: 'ok',
+        service: 'tbank-api',
+        hasTinkoffUrl: Boolean(process.env.TINKOFF_URL),
+    });
+});
 
 app.get('/accounts', getTinkoffAccountsController);
 
@@ -34,8 +45,16 @@ app.post('/portfolio', async (req, res) => {
         const resp = await formatPortfolio(token, data)
         res.status(200).json(resp);
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        // Логируем компактно (в Vercel Functions logs) + отдаём причину клиенту,
+        // чтобы 500 был диагностируемым. Сообщение axios не содержит токена
+        // (он в заголовках, не в message).
+        const upstreamStatus = error?.response?.status ?? null;
+        console.error('POST /portfolio failed:', upstreamStatus, error?.message);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            detail: error?.message ?? String(error),
+            upstreamStatus,
+        });
     }
 });
 
