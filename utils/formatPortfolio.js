@@ -1,28 +1,41 @@
 import { getAccounts } from '../api/tinkoff/getAccounts/getAccounts.js';
-import { getShareByUid } from '../api/tinkoff/getSharesByUid/getShareByUid.js';
+import { getInstrumentByUid } from '../api/tinkoff/getSharesByUid/getShareByUid.js';
 import { formatPrice } from './formatPrice.js';
 import { formatStockData } from './formatStockData.js';
 
 export const formatPortfolio = async (token, data) => {
+    // Обогащаем позиции-бумаги (акции/облигации/ETF): GetInstrumentBy отдаёт
+    // паспорт для любого типа. Валюту исключаем — денежный остаток не бумага
+    // (нет смысла в цене/доходности), а фронт показывает только позиции с
+    // ticker, поэтому без обогащения валютные строки в таблицу не попадут.
     const itemUids = data.positions
-        .filter((item) => item.instrumentType === 'share')
+        .filter((item) => item.positionUid && item.instrumentType !== 'currency')
         .map((item) => item.positionUid);
 
-    const info = await Promise.all(
-        itemUids.map(async (item) => {
-            const res = await getShareByUid(token, item);
-            const { instrument } = res;
+    // Тянем справочный паспорт (тикер/имя/сектор/ISIN) по каждому инструменту.
+    // allSettled: одна битая бумага (делистинг, лимит, таймаут) не должна
+    // ронять весь ответ в 500 — просто останется без обогащения.
+    const settled = await Promise.allSettled(
+        itemUids.map((item) => getInstrumentByUid(token, item))
+    );
+
+    const info = settled
+        .filter((result) => result.status === 'fulfilled' && result.value?.instrument)
+        .map((result) => {
+            const { instrument } = result.value;
             return {
                 uid: instrument.uid,
                 isin: instrument.isin,
                 ticker: instrument.ticker,
                 name: instrument.name,
-                sector: instrument.sector,
+                // sector есть только в типовых ShareBy/BondBy; в базовом
+                // паспорте GetInstrumentBy его нет → будет null (фронт его
+                // для позиций портфеля не использует).
+                sector: instrument.sector ?? null,
             };
-        })
-    );
+        });
 
-    // получили uid акций
+    // получили метаданные инструментов
 
     const updateData = {
         ...data,
@@ -40,13 +53,6 @@ export const formatPortfolio = async (token, data) => {
 
     // обновили данные добавив в positions нужные поля (тикер, название, сектор)
 
-    // const formatedData = {
-    //     ...updateData,
-    //     positions: updateData.positions.map((item) => ({
-    //         ...formatStockData(item),
-    //     })),
-    // };
-
     const formatedData = {
         ...updateData,
         positions: updateData.positions.map((item) => {
@@ -54,8 +60,8 @@ export const formatPortfolio = async (token, data) => {
 
             for (const key in item) {
                 if (typeof item[key] === 'object' && item[key] !== null) {
-                    formattedData[key] = formatPrice(item[key])
-                }else {
+                    formattedData[key] = formatPrice(item[key]);
+                } else {
                     formattedData[key] = item[key];
                 }
             }
@@ -69,12 +75,15 @@ export const formatPortfolio = async (token, data) => {
     function formatPortfolioData(portfolio) {
         const formattedData = {};
 
-        // Обрабатываем каждое поле, содержащее валюту
+        // Обрабатываем каждое поле, содержащее валюту { units, nano }.
+        // Проверяем, что это непустой объект, иначе portfolio[key].units
+        // кидает TypeError на null (например, при пустом портфеле).
         for (const key in portfolio) {
-            if (portfolio[key].units !== undefined) {
-                formattedData[key] = formatPrice(portfolio[key]);
+            const value = portfolio[key];
+            if (typeof value === 'object' && value !== null && value.units !== undefined) {
+                formattedData[key] = formatPrice(value);
             } else {
-                formattedData[key] = portfolio[key]; // Если это не валюта, оставляем как есть
+                formattedData[key] = value; // Если это не валюта, оставляем как есть
             }
         }
 
@@ -87,7 +96,9 @@ export const formatPortfolio = async (token, data) => {
 
     const accounts = await getAccounts(token);
 
-    const accountsName = accounts.accounts.find((item) => item.id === resp.accountId).name;
+    // Счёт может не найтись (закрыт/чужой accountId) — не роняем ответ.
+    const accountsName =
+        accounts?.accounts?.find((item) => item.id === resp.accountId)?.name ?? null;
 
     const formatedResp = {
         ...resp,
@@ -99,7 +110,7 @@ export const formatPortfolio = async (token, data) => {
 
     const updatedResp = {
         ...formatedResp, // Копируем весь объект
-        positions: formatedResp.positions.map(item => formatStockData(item)) // Обновляем только positions
+        positions: formatedResp.positions.map((item) => formatStockData(item)), // Обновляем только positions
     };
 
     // прибыль от процента и название портфеля

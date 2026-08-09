@@ -1,38 +1,18 @@
+// На вход приходит позиция, у которой денежные поля уже приведены к числам
+// в formatPortfolio (каждое { units, nano } прогнано через formatPrice).
+// Поэтому считаем производные величины прямо из готовых чисел.
 export function formatStockData(position) {
-    const averagePositionPriceUnits = Number(position.averagePositionPrice);
-    const averagePositionPriceNano = Number(position.averagePositionPrice);
-    const currentPriceUnits = Number(position.currentPrice);
-    const currentPriceNano = Number(position.currentPrice);
-    const dailyYieldUnits = Number(position.dailyYield.units);
-    const dailyYieldNano = Number(position.dailyYield.nano);
-    const expectedYieldUnits = Number(position.expectedYield.units);
-    const expectedYieldNano = Number(position.expectedYield.nano);
-    // return {
-    //     ...position,
-    //     ticker: position.ticker,
-    //     name: position.name,
-    //     sector: position.sector,
-    //     quantity: Number(position.quantity.units),
-    //     averagePurchasePrice: Number(
-    //         (averagePositionPriceUnits + averagePositionPriceNano / 1e9).toFixed(2)
-    //     ),
-    //     currentPrice: Number((currentPriceUnits + currentPriceNano / 1e9).toFixed(2)),
-    //     expectedYield: Number((expectedYieldUnits + expectedYieldNano / 1e9).toFixed(2)),
-    //     expectedYieldPercent: Number(expectedYieldPercent.toFixed(2)),
-    //     priceInPorfolio: Number(priceInPorfolio.toFixed(2)),
-    //     dailyChange: Number((dailyYieldUnits + dailyYieldNano / 1e9).toFixed(2)),
-    // };
+    const currentPrice = Number(position.currentPrice) || 0;
+    const averagePrice = Number(position.averagePositionPrice) || 0;
+    const quantity = Number(position.quantity) || 0;
 
-    const xyu = 'xyu';
-    const priceInPorfolio =
-        (currentPriceUnits + currentPriceNano / 1e9).toFixed(2) * position.quantity;
-    const expectedYieldPercent = Number((
-        ((currentPriceUnits +
-            currentPriceNano / 1e9 -
-            (averagePositionPriceUnits + averagePositionPriceNano / 1e9)) /
-            (averagePositionPriceUnits + averagePositionPriceNano / 1e9)) *
-        100
-    ).toFixed(2));
+    // Стоимость позиции в портфеле = текущая цена × количество
+    const priceInPorfolio = Number((currentPrice * quantity).toFixed(2));
+
+    // Доходность в процентах относительно средней цены покупки
+    const expectedYieldPercent = averagePrice
+        ? Number((((currentPrice - averagePrice) / averagePrice) * 100).toFixed(2))
+        : 0;
 
     return {
         ...position,
