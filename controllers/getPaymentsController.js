@@ -7,6 +7,11 @@ import { formatPrice } from '../utils/formatPrice.js';
 const PAYMENT_TYPES = [
     'OPERATION_TYPE_COUPON',
     'OPERATION_TYPE_DIVIDEND',
+    // Дивиденды, выплаченные напрямую на банковскую карту (не на брокерский
+    // счёт), приходят отдельным типом DIV_EXT. Без него терялись все выплаты
+    // «на карту» — при этом удержанный по ним налог (DIVIDEND_TAX) проходил,
+    // из-за чего в истории были «голые» налоги без самой выплаты.
+    'OPERATION_TYPE_DIV_EXT',
     'OPERATION_TYPE_AMORTIZATION',
     'OPERATION_TYPE_BOND_REPAYMENT',
     'OPERATION_TYPE_BOND_REPAYMENT_FULL',
@@ -21,6 +26,7 @@ const categoryOf = (operationType) => {
         case 'OPERATION_TYPE_COUPON':
             return 'coupon';
         case 'OPERATION_TYPE_DIVIDEND':
+        case 'OPERATION_TYPE_DIV_EXT':
             return 'dividend';
         case 'OPERATION_TYPE_AMORTIZATION':
         case 'OPERATION_TYPE_BOND_REPAYMENT':
