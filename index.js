@@ -5,6 +5,7 @@ import { getTinkoffAccountsController } from './controllers/getTinkoffAccountsCo
 import cors from 'cors';
 import { getSharesController } from './controllers/getSharesController.js';
 import { getCouponsController } from './controllers/getCouponsController.js';
+import { getDividendsController } from './controllers/getDividendsController.js';
 import { getPaymentsController } from './controllers/getPaymentsController.js';
 import { getPortfolio } from './api/tinkoff/getPortfolio/getPortfolio.js';
 import { formatStockData } from './utils/formatStockData.js';
@@ -36,6 +37,8 @@ app.get('/accounts', getTinkoffAccountsController);
 app.post('/shares', getSharesController);
 
 app.post('/coupons', getCouponsController);
+
+app.post('/dividends', getDividendsController);
 
 app.post('/payments', getPaymentsController);
 
