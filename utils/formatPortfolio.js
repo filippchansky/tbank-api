@@ -1,4 +1,3 @@
-import { getAccounts } from '../api/tinkoff/getAccounts/getAccounts.js';
 import { getInstrumentByUid } from '../api/tinkoff/getSharesByUid/getShareByUid.js';
 import { formatPrice } from './formatPrice.js';
 import { formatStockData } from './formatStockData.js';
@@ -94,15 +93,10 @@ export const formatPortfolio = async (token, data) => {
 
     const resp = formatPortfolioData(formatedData);
 
-    const accounts = await getAccounts(token);
-
-    // Счёт может не найтись (закрыт/чужой accountId) — не роняем ответ.
-    const accountsName =
-        accounts?.accounts?.find((item) => item.id === resp.accountId)?.name ?? null;
-
+    // Имя счёта резолвит фронт (оно уже есть в useTbank/Firestore), поэтому
+    // повторный GetAccounts на каждый запрос портфеля здесь не нужен.
     const formatedResp = {
         ...resp,
-        name: accountsName,
         expectedYieldInt: Number(
             ((resp.totalAmountPortfolio * resp.expectedYield) / 100).toFixed(2)
         ),
@@ -113,7 +107,7 @@ export const formatPortfolio = async (token, data) => {
         positions: formatedResp.positions.map((item) => formatStockData(item)), // Обновляем только positions
     };
 
-    // прибыль от процента и название портфеля
+    // прибыль от процента
 
     return updatedResp;
 };

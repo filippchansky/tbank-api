@@ -4,6 +4,8 @@ import { getAccounts } from './api/tinkoff/getAccounts/getAccounts.js';
 import { getTinkoffAccountsController } from './controllers/getTinkoffAccountsController.js';
 import cors from 'cors';
 import { getSharesController } from './controllers/getSharesController.js';
+import { getCouponsController } from './controllers/getCouponsController.js';
+import { getPaymentsController } from './controllers/getPaymentsController.js';
 import { getPortfolio } from './api/tinkoff/getPortfolio/getPortfolio.js';
 import { formatStockData } from './utils/formatStockData.js';
 import { formatPrice } from './utils/formatPrice.js';
@@ -33,6 +35,10 @@ app.get('/accounts', getTinkoffAccountsController);
 
 app.post('/shares', getSharesController);
 
+app.post('/coupons', getCouponsController);
+
+app.post('/payments', getPaymentsController);
+
 app.post('/portfolio', async (req, res) => {
     try {
         const token = req.headers.authorization;
@@ -40,7 +46,6 @@ app.post('/portfolio', async (req, res) => {
             return res.status(400).json({ error: 'Authorization header is missing' });
         }
         const { accountId, currency } = req.body;
-        console.log(accountId, currency);
         const data = await getPortfolio(token, accountId, currency);
         const resp = await formatPortfolio(token, data)
         res.status(200).json(resp);

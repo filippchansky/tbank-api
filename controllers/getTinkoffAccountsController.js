@@ -20,7 +20,15 @@ export const getTinkoffAccountsController = async (req, res) => {
 
         res.status(200).json(formatData);
     } catch (error) {
-        console.error(`[GET /accounts] Error:`, error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        // Пробрасываем статус от Tinkoff: 401 = невалидный токен, чтобы фронт
+        // отличал «неверный токен» от сетевой/серверной ошибки. Токен живёт в
+        // заголовке, не в message, — логировать/отдавать message безопасно.
+        const upstreamStatus = error?.response?.status ?? null;
+        console.error(`[GET /accounts] Error:`, upstreamStatus, error?.message);
+        const status = upstreamStatus === 401 ? 401 : 500;
+        res.status(status).json({
+            error: status === 401 ? 'Invalid token' : 'Internal Server Error',
+            upstreamStatus,
+        });
     }
 }
