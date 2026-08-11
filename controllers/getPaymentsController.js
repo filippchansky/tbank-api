@@ -18,6 +18,19 @@ const PAYMENT_TYPES = [
     'OPERATION_TYPE_DIVIDEND_TAX',
     'OPERATION_TYPE_BOND_TAX',
     'OPERATION_TYPE_TAX',
+    // Комиссии (payment < 0). Без них «Доходность» была завышена: Т-Банк даёт
+    // реализованный `yield` БЕЗ вычета комиссий, поэтому их учитываем отдельной
+    // строкой. Берём всё «семейство» комиссий: брокерская, депозитарная
+    // (обслуживание), маржинальная, за автоследование и вывод.
+    'OPERATION_TYPE_BROKER_FEE',
+    'OPERATION_TYPE_SERVICE_FEE',
+    'OPERATION_TYPE_MARGIN_FEE',
+    'OPERATION_TYPE_SUCCESS_FEE',
+    'OPERATION_TYPE_TRACK_MFEE',
+    'OPERATION_TYPE_TRACK_PFEE',
+    'OPERATION_TYPE_CASH_FEE',
+    'OPERATION_TYPE_OUT_FEE',
+    'OPERATION_TYPE_ADVICE_FEE',
 ];
 
 // Приводим сырой тип операции к нашей категории (для группировки/цвета на фронте).
@@ -36,6 +49,16 @@ const categoryOf = (operationType) => {
         case 'OPERATION_TYPE_BOND_TAX':
         case 'OPERATION_TYPE_TAX':
             return 'tax';
+        case 'OPERATION_TYPE_BROKER_FEE':
+        case 'OPERATION_TYPE_SERVICE_FEE':
+        case 'OPERATION_TYPE_MARGIN_FEE':
+        case 'OPERATION_TYPE_SUCCESS_FEE':
+        case 'OPERATION_TYPE_TRACK_MFEE':
+        case 'OPERATION_TYPE_TRACK_PFEE':
+        case 'OPERATION_TYPE_CASH_FEE':
+        case 'OPERATION_TYPE_OUT_FEE':
+        case 'OPERATION_TYPE_ADVICE_FEE':
+            return 'fee';
         default:
             return 'other';
     }

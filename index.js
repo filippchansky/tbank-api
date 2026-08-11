@@ -7,6 +7,8 @@ import { getSharesController } from './controllers/getSharesController.js';
 import { getCouponsController } from './controllers/getCouponsController.js';
 import { getDividendsController } from './controllers/getDividendsController.js';
 import { getPaymentsController } from './controllers/getPaymentsController.js';
+import { getRealizedController } from './controllers/getRealizedController.js';
+import { getCashflowsController } from './controllers/getCashflowsController.js';
 import { getPortfolio } from './api/tinkoff/getPortfolio/getPortfolio.js';
 import { formatStockData } from './utils/formatStockData.js';
 import { formatPrice } from './utils/formatPrice.js';
@@ -41,6 +43,10 @@ app.post('/coupons', getCouponsController);
 app.post('/dividends', getDividendsController);
 
 app.post('/payments', getPaymentsController);
+
+app.post('/realized', getRealizedController);
+
+app.post('/cashflows', getCashflowsController);
 
 app.post('/portfolio', async (req, res) => {
     try {
