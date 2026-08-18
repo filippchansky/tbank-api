@@ -57,6 +57,15 @@ export const formatPortfolio = async (token, data) => {
         positions: updateData.positions.map((item) => {
             const formattedData = {};
 
+            // Валюта позиции живёт ВНУТРИ денежных полей (currentPrice.currency).
+            // Ниже formatPrice сжимает { units, nano } в число и currency теряет —
+            // поэтому достаём её здесь, до сжатия. Т-Банк отдаёт код в нижнем
+            // регистре (rub/usd); фронтовый реестр валют его нормализует. Цены
+            // позиций Т-Банк НЕ приводит к рублю (в отличие от агрегатов), так
+            // что без этого поля валютная бумага рисуется со значком ₽.
+            formattedData.currency =
+                item.currentPrice?.currency ?? item.averagePositionPrice?.currency ?? null;
+
             for (const key in item) {
                 if (typeof item[key] === 'object' && item[key] !== null) {
                     formattedData[key] = formatPrice(item[key]);
