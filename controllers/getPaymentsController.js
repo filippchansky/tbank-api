@@ -96,6 +96,7 @@ export const getPaymentsController = async (req, res) => {
                 operationType: op.type,
                 category: categoryOf(op.type),
                 name: op.name ?? null,
+                ticker: op.ticker ?? null,
                 figi: op.figi ?? null,
                 instrumentUid: op.instrumentUid ?? null,
                 instrumentType: op.instrumentType ?? null,
